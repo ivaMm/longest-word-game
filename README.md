@@ -1,10 +1,17 @@
 # longest-word-game
-## build & run:
+### build & run:
 ```bash
 stack build
+```
+```bash
 stack exec longest-word-game-exe
 ```
-or 
+or :
 ```bash
 stack run
+```
+
+### run tests:
+```bash
+stack test
 ```

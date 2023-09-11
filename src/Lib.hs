@@ -6,11 +6,14 @@ module Lib
     ( randomString
       , checkAttempt
       , calculateScore
+      , toUpperCase
+      , frequency
+      , numTimesFound
+      , atLeastNtimes
     ) where
 
-
-import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad                        (liftM)
+import Control.Monad.IO.Class               (MonadIO)
 import qualified Data.Aeson                 as A
 import qualified Data.ByteString.Lazy.Char8 as B8L
 import qualified Data.Char                  as C
@@ -21,7 +24,6 @@ import qualified Data.Time.Clock.POSIX      as TCP
 import qualified GHC.Generics               as G
 import qualified Network.HTTP.Simple        as HT
 import qualified System.Random              as R
-
 
 
 -- A standard function generating random strings.
@@ -38,7 +40,7 @@ checkAttempt attempt randomStr = do
     
 -- check if attempt is in random string
 toUpperCase :: [Char] -> [Char]
-toUpperCase attempt = map (\a -> C.toUpper a) attempt
+toUpperCase = map C.toUpper
 
 atLeastNLength :: (Monad m, Foldable t) => t a -> Int -> m Bool
 atLeastNLength attempt n = return $ L.length attempt >= n
@@ -47,7 +49,7 @@ attemptInRandomStr :: Monad m => [Char] -> [Char] -> m Bool
 attemptInRandomStr attempt ys = do
     let att = toUpperCase attempt
     let fxs = frequency att
-    return $ foldl(\acc (x, i) -> if x `elem` ys then (atLeastNtimes i ys x) && acc else False) True fxs
+    return $ foldl(\acc (x, i) -> (x `elem` ys) && (atLeastNtimes i ys x && acc)) True fxs
 
 frequency :: (Ord a) => [a] -> [(a, Int)]
 frequency xs = M.toList (M.fromListWith (+) [(x, 1) | x <- xs])
@@ -57,7 +59,7 @@ atLeastNtimes n arr el = do
     numTimesFound el arr >= n
 
 numTimesFound :: Eq a => a -> [a] -> Int
-numTimesFound x xs = (length . filter (== x)) xs
+numTimesFound x = length . filter (== x)
 
 
 -- api calls part - check if attempt is valid word
@@ -72,7 +74,7 @@ data Attempt = Attempt
   deriving (Show, Eq, G.Generic, A.ToJSON, A.FromJSON)
 
 maybeWord :: B8L.ByteString -> Maybe Attempt
-maybeWord jsonString = A.decode jsonString
+maybeWord = A.decode
 
 attemptInDictionary :: MonadIO m => [Char] -> m Bool
 attemptInDictionary attempt = do
@@ -87,4 +89,4 @@ attemptInDictionary attempt = do
 
 calculateScore :: Foldable t => TC.UTCTime -> TC.UTCTime -> t a -> Int
 calculateScore startTime endTime attempt = 
-  (10 * length attempt) - round (((TCP.utcTimeToPOSIXSeconds endTime) - (TCP.utcTimeToPOSIXSeconds startTime))) 
+  (10 * length attempt) - round (TCP.utcTimeToPOSIXSeconds endTime - TCP.utcTimeToPOSIXSeconds startTime) 

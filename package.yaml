@@ -28,6 +28,7 @@ dependencies:
 - aeson
 - split
 - time
+- hspec
 
 ghc-options:
 - -Wall
